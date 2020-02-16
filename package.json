@@ -1,0 +1,23 @@
+{
+  "name": "letterboxd-trakt-sync",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "author": "Sebastian Langer <sl@scn.cx>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/express": "^4.17.2",
+    "typescript": "^3.7.5"
+  },
+  "dependencies": {
+    "axios": "^0.19.2",
+    "express": "^4.17.1",
+    "p-map": "^3.0.0",
+    "trakt.tv": "^7.2.0"
+  }
+}
