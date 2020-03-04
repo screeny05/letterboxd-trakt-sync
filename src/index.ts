@@ -3,18 +3,26 @@ import axios from 'axios';
 import { LetterboxdApi } from 'letterboxd-mark-as-watched';
 import pMap from 'p-map';
 
-const LETTERBOXD_USERNAME = 'xxx';
 const LETTERBOXD_LIST_ORIGIN = 'https://letterbox-list-radarr.herokuapp.com';
 
-const TRAKT_CLIENT_ID = 'xxx';
-const TRAKT_CLIENT_SECRET = 'xxx';
-const TRAKT_ACCESS_TOKEN = {/* ... */};
+const {
+    TRAKT_CLIENT_ID,
+    TRAKT_CLIENT_SECRET,
+    TRAKT_ACCESS_TOKEN,
+    TRAKT_ACCESS_TOKEN_EXPIRES,
+    TRAKT_REFRESH_TOKEN,
+    LETTERBOXD_USERNAME,
+    LETTERBOXD_PASSWORD
+} = process.env;
 
-const traktClient = new Trakt({
-    client_id: TRAKT_CLIENT_ID,
-    client_secret: TRAKT_CLIENT_SECRET
-});
-const letterboxdClient = new LetterboxdApi('xxx', 'xxx');
+const TRAKT_TOKEN = {
+    access_token: TRAKT_ACCESS_TOKEN,
+    expires: TRAKT_ACCESS_TOKEN_EXPIRES,
+    refresh_token: TRAKT_REFRESH_TOKEN
+};
+
+const traktClient = new Trakt({ client_id: TRAKT_CLIENT_ID, client_secret: TRAKT_CLIENT_SECRET });
+const letterboxdClient = new LetterboxdApi(LETTERBOXD_USERNAME, LETTERBOXD_PASSWORD);
 
 interface Movie {
     title: string;
@@ -26,7 +34,7 @@ interface Movie {
     tmdb: number;
 }
 
-const transformTraktResponseToMovieList = (res): Movie[] => res.map(entry => ({
+const transformTraktResponseToMovieList = (res: any[]): Movie[] => res.map(entry => ({
     title: entry.movie.title,
     year: entry.movie.year,
     traktId: entry.movie.ids.trakt,
@@ -35,7 +43,7 @@ const transformTraktResponseToMovieList = (res): Movie[] => res.map(entry => ({
     tmdb: entry.movie.ids.tmdb
 }));
 
-const transformLetterboxdResponseToMovieList = (res): Movie[] => res.map(movie => ({
+const transformLetterboxdResponseToMovieList = (res: any[]): Movie[] => res.map(movie => ({
     title: movie.title,
     year: +movie.release_year,
     letterboxdSlug: movie.clean_title,
@@ -75,13 +83,13 @@ const markAsWatchedLetterboxd = async (movies: Movie[]) => {
     }
 
     pMap(movies, async (movie) => {
-        const slug = await letterboxdClient.getSlug(movie.tmdb, movie.imdb);
+        const slug = await letterboxdClient.getSlug(movie.tmdb.toString(), movie.imdb);
         await letterboxdClient.markAsWatched(slug);
     }, { concurrency: 3 });
 };
 
 (async function(){
-    await traktClient.import_token(TRAKT_ACCESS_TOKEN);
+    await traktClient.import_token(TRAKT_TOKEN);
     await letterboxdClient.authenticate();
     const watchedTraktMovies = transformTraktResponseToMovieList(await traktClient.sync.watched({ type: 'movies' }));
     const watchedLetterboxdMovies = transformLetterboxdResponseToMovieList(await (await axios.get(`${LETTERBOXD_LIST_ORIGIN}/${LETTERBOXD_USERNAME}/films`)).data);
